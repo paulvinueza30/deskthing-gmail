@@ -3,8 +3,6 @@ import { google } from 'googleapis'
 import * as http from 'http'
 import * as url from 'url'
 
-const deskThing = DeskThing.getInstance()
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface GmailData {
@@ -40,8 +38,8 @@ function getOAuthClient(clientId: string, clientSecret: string) {
 }
 
 async function getAuthenticatedClient(): Promise<InstanceType<typeof google.auth.OAuth2> | null> {
-  const settings = await deskThing.getSettings() as Record<string, { value: string }>
-  const data = (await deskThing.getData()) as GmailData | null
+  const settings = await DeskThing.getSettings() as Record<string, { value: string }>
+  const data = (await DeskThing.getData()) as GmailData | null
 
   const clientId = settings?.client_id?.value
   const clientSecret = settings?.client_secret?.value
@@ -60,7 +58,7 @@ async function getAuthenticatedClient(): Promise<InstanceType<typeof google.auth
   if (data.token_expiry && data.token_expiry - now < 5 * 60 * 1000) {
     try {
       const { credentials } = await oAuth2Client.refreshAccessToken()
-      await deskThing.saveData({
+      await DeskThing.saveData({
         ...(data as object),
         access_token: credentials.access_token,
         token_expiry: credentials.expiry_date,
@@ -77,12 +75,12 @@ async function getAuthenticatedClient(): Promise<InstanceType<typeof google.auth
 // ─── Auth flow ────────────────────────────────────────────────────────────────
 
 async function startAuthFlow() {
-  const settings = await deskThing.getSettings() as Record<string, { value: string }>
+  const settings = await DeskThing.getSettings() as Record<string, { value: string }>
   const clientId = settings?.client_id?.value
   const clientSecret = settings?.client_secret?.value
 
   if (!clientId || !clientSecret) {
-    deskThing.sendDataToClient({
+    DeskThing.send({
       type: 'gmail_status',
       payload: { status: 'error', message: 'Please set your Google Client ID and Client Secret in the settings first.' },
     })
@@ -100,13 +98,13 @@ async function startAuthFlow() {
     ],
   })
 
-  deskThing.sendDataToClient({
+  DeskThing.send({
     type: 'gmail_status',
     payload: { status: 'authorizing', message: 'Opening browser for authorization...' },
   })
 
   // Open the auth URL in the user's default browser
-  deskThing.openUrl(authUrl)
+  DeskThing.openUrl(authUrl)
 
   // Spin up a temporary HTTP server to catch the OAuth callback
   const server = http.createServer(async (req, res) => {
@@ -129,13 +127,13 @@ async function startAuthFlow() {
 
       try {
         const { tokens } = await oAuth2Client.getToken(code)
-        await deskThing.saveData({
+        await DeskThing.saveData({
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
           token_expiry: tokens.expiry_date,
         } as GmailData)
 
-        deskThing.sendDataToClient({
+        DeskThing.send({
           type: 'gmail_status',
           payload: { status: 'authorized', message: 'Gmail connected!' },
         })
@@ -143,7 +141,7 @@ async function startAuthFlow() {
         // Fetch initial emails
         await fetchAndSendEmails()
       } catch (err) {
-        deskThing.sendDataToClient({
+        DeskThing.send({
           type: 'gmail_status',
           payload: { status: 'error', message: 'Failed to exchange auth code. Please try again.' },
         })
@@ -151,7 +149,7 @@ async function startAuthFlow() {
     } else {
       res.end('<html><body>Authorization failed or was cancelled.</body></html>')
       server.close()
-      deskThing.sendDataToClient({
+      DeskThing.send({
         type: 'gmail_status',
         payload: { status: 'error', message: 'Authorization was cancelled.' },
       })
@@ -159,7 +157,7 @@ async function startAuthFlow() {
   })
 
   server.listen(REDIRECT_PORT, 'localhost', () => {
-    deskThing.sendLog(`OAuth callback server listening on port ${REDIRECT_PORT}`)
+    console.log(`OAuth callback server listening on port ${REDIRECT_PORT}`)
   })
 
   // Timeout after 5 minutes
@@ -205,7 +203,7 @@ function getHeader(headers: { name: string; value: string }[], name: string): st
 async function fetchAndSendEmails(maxResults = 20) {
   const authClient = await getAuthenticatedClient()
   if (!authClient) {
-    deskThing.sendDataToClient({
+    DeskThing.send({
       type: 'gmail_status',
       payload: { status: 'unauthorized', message: 'Not authorized. Please connect your Gmail account.' },
     })
@@ -232,7 +230,7 @@ async function fetchAndSendEmails(maxResults = 20) {
 
     const messages = listRes.data.messages ?? []
     if (messages.length === 0) {
-      deskThing.sendDataToClient({
+      DeskThing.send({
         type: 'gmail_emails',
         payload: { emails: [], unreadCount },
       })
@@ -263,13 +261,13 @@ async function fetchAndSendEmails(maxResults = 20) {
       })
     )
 
-    deskThing.sendDataToClient({
+    DeskThing.send({
       type: 'gmail_emails',
       payload: { emails: emailSummaries, unreadCount },
     })
   } catch (err: any) {
-    deskThing.sendLog(`Error fetching emails: ${err?.message}`)
-    deskThing.sendDataToClient({
+    console.log(`Error fetching emails: ${err?.message}`)
+    DeskThing.send({
       type: 'gmail_status',
       payload: { status: 'error', message: 'Failed to fetch emails. Check your connection.' },
     })
@@ -303,9 +301,9 @@ async function fetchEmailDetail(emailId: string) {
       body: body || detail.data.snippet || '(empty)',
     }
 
-    deskThing.sendDataToClient({ type: 'gmail_email_detail', payload: email })
+    DeskThing.send({ type: 'gmail_email_detail', payload: email })
   } catch (err: any) {
-    deskThing.sendLog(`Error fetching email detail: ${err?.message}`)
+    console.log(`Error fetching email detail: ${err?.message}`)
   }
 }
 
@@ -320,9 +318,9 @@ async function markAsRead(emailId: string) {
       id: emailId,
       requestBody: { removeLabelIds: ['UNREAD'] },
     })
-    deskThing.sendDataToClient({ type: 'gmail_marked_read', payload: { id: emailId } })
+    DeskThing.send({ type: 'gmail_marked_read', payload: { id: emailId } })
   } catch (err: any) {
-    deskThing.sendLog(`Error marking email as read: ${err?.message}`)
+    console.log(`Error marking email as read: ${err?.message}`)
   }
 }
 
@@ -356,14 +354,14 @@ function formatDate(dateStr: string): string {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
-deskThing.on('start', async () => {
-  deskThing.sendLog('Gmail app starting...')
+DeskThing.on('start', async () => {
+  console.log('Gmail app starting...')
 
   // Register settings if not already set
-  const existing = await deskThing.getSettings() as Record<string, any>
+  const existing = await DeskThing.getSettings() as Record<string, any>
 
   if (!existing?.client_id) {
-    await deskThing.addSettings({
+    await DeskThing.initSettings({
       client_id: {
         label: 'Google Client ID',
         type: 'string',
@@ -380,22 +378,22 @@ deskThing.on('start', async () => {
   }
 
   // Check if already authorized
-  const data = (await deskThing.getData()) as GmailData | null
+  const data = (await DeskThing.getData()) as GmailData | null
   if (data?.access_token) {
-    deskThing.sendDataToClient({
+    DeskThing.send({
       type: 'gmail_status',
       payload: { status: 'authorized', message: 'Gmail connected!' },
     })
     await fetchAndSendEmails()
   } else {
-    deskThing.sendDataToClient({
+    DeskThing.send({
       type: 'gmail_status',
       payload: { status: 'unauthorized', message: 'Please connect your Gmail account.' },
     })
   }
 })
 
-deskThing.on('get', async (data: any) => {
+DeskThing.on('get', async (data: any) => {
   const { request, payload } = data
   switch (request) {
     case 'emails':
@@ -407,7 +405,7 @@ deskThing.on('get', async (data: any) => {
   }
 })
 
-deskThing.on('action', async (data: any) => {
+DeskThing.on('action', async (data: any) => {
   const { request, payload } = data
   switch (request) {
     case 'auth':
@@ -422,6 +420,6 @@ deskThing.on('action', async (data: any) => {
   }
 })
 
-deskThing.on('stop', () => {
-  deskThing.sendLog('Gmail app stopping.')
+DeskThing.on('stop', () => {
+  console.log('Gmail app stopping.')
 })
