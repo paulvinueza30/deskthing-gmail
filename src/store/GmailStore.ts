@@ -1,4 +1,4 @@
-import DeskThing from '@deskthing/client'
+import { DeskThing } from '@deskthing/client'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

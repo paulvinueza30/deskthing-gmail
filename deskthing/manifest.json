@@ -11,7 +11,7 @@
   "author": "Power",
   "platforms": ["linux", "windows", "mac"],
   "homepage": "",
-  "repository": "",
+  "repository": "https://github.com/paulvinueza30/deskthing-gmail",
   "tags": [false, false],
   "requiredVersions": { "server": ">=0.11.8", "client": ">=0.11.2" }
 }

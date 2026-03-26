@@ -1,4 +1,4 @@
-import DeskThing from '@deskthing/server'
+import { DeskThing } from '@deskthing/server'
 import { google } from 'googleapis'
 import * as http from 'http'
 import * as url from 'url'
