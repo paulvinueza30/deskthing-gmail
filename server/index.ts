@@ -395,32 +395,30 @@ deskThing.on('start', async () => {
   }
 })
 
-deskThing.on('data', async (data: any) => {
-  const { type, request, payload } = data
-
-  if (type === 'get') {
-    switch (request) {
-      case 'emails':
-        await fetchAndSendEmails()
-        break
-      case 'email_detail':
-        if (payload?.id) await fetchEmailDetail(payload.id)
-        break
-    }
+deskThing.on('get', async (data: any) => {
+  const { request, payload } = data
+  switch (request) {
+    case 'emails':
+      await fetchAndSendEmails()
+      break
+    case 'email_detail':
+      if (payload?.id) await fetchEmailDetail(payload.id)
+      break
   }
+})
 
-  if (type === 'action') {
-    switch (request) {
-      case 'auth':
-        await startAuthFlow()
-        break
-      case 'mark_read':
-        if (payload?.id) await markAsRead(payload.id)
-        break
-      case 'refresh':
-        await fetchAndSendEmails()
-        break
-    }
+deskThing.on('action', async (data: any) => {
+  const { request, payload } = data
+  switch (request) {
+    case 'auth':
+      await startAuthFlow()
+      break
+    case 'mark_read':
+      if (payload?.id) await markAsRead(payload.id)
+      break
+    case 'refresh':
+      await fetchAndSendEmails()
+      break
   }
 })
 

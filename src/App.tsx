@@ -23,6 +23,8 @@ export default function App() {
       store.onStatus((data) => setStatus(data)),
       store.onUnreadCount((count) => setUnreadCount(count)),
     ]
+    // Request initial state from the server
+    store.refreshEmails()
     return () => unsubs.forEach((fn) => fn())
   }, [])
 
@@ -46,6 +48,18 @@ export default function App() {
   const handleRefresh = () => {
     setLoading(true)
     store.refreshEmails()
+  }
+
+  // Show loading screen while waiting for initial server response
+  if (status.status === 'loading') {
+    return (
+      <div className="app">
+        <div className="detail-loading">
+          <div className="spinner" />
+          <span>Connecting...</span>
+        </div>
+      </div>
+    )
   }
 
   // Show auth screen if not yet authorized

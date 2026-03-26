@@ -17,7 +17,7 @@ export interface EmailDetail extends EmailSummary {
 }
 
 export interface GmailStatus {
-  status: 'authorized' | 'unauthorized' | 'authorizing' | 'error'
+  status: 'authorized' | 'unauthorized' | 'authorizing' | 'error' | 'loading'
   message: string
 }
 
@@ -32,7 +32,7 @@ class GmailStore {
   private _emails: EmailSummary[] = []
   private _emailDetail: EmailDetail | null = null
   private _unreadCount = 0
-  private _status: GmailStatus = { status: 'unauthorized', message: 'Loading...' }
+  private _status: GmailStatus = { status: 'loading', message: 'Loading...' }
   private _loading = false
 
   private emailListeners: Listener<EmailSummary[]>[] = []

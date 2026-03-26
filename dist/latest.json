@@ -1,0 +1,44 @@
+{
+  "meta_version": "0.11.8",
+  "meta_type": "app",
+  "repository": "https://github.com/paulvinueza30/deskthing-gmail",
+  "icon": "",
+  "size": 2507162,
+  "appManifest": {
+    "id": "gmail",
+    "isWebApp": true,
+    "requires": [],
+    "label": "Gmail",
+    "version": "1.0.0",
+    "version_code": "1.0",
+    "compatible_server": [
+      "11"
+    ],
+    "compatible_client": [
+      "11"
+    ],
+    "description": "Check and read your Gmail inbox directly on your Car Thing. Browse emails, read messages, and mark them as read.",
+    "author": "Power",
+    "platforms": [
+      "linux",
+      "windows",
+      "mac"
+    ],
+    "homepage": "",
+    "repository": "https://github.com/paulvinueza30/deskthing-gmail",
+    "tags": [
+      false,
+      false
+    ],
+    "requiredVersions": {
+      "server": ">=0.11.8",
+      "client": ">=0.11.2"
+    }
+  },
+  "updateUrl": "https://github.com/paulvinueza30/deskthing-gmail/releases/latest/download/gmail-v1.0.0.zip",
+  "hash": "274665e70ff502d2d3b9df5b274865c26dae7dbed7b38bd686838b8b336a81b8615a027bb54d5a90e1bd055358a5948718fd899765c123f566d87b5d0c56a755",
+  "hashAlgorithm": "sha512",
+  "updatedAt": 1774546310308,
+  "createdAt": 1774546310308,
+  "downloads": 0
+}
