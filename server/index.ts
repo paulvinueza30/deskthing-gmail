@@ -156,7 +156,7 @@ async function startAuthFlow() {
     }
   })
 
-  server.listen(REDIRECT_PORT, 'localhost', () => {
+  server.listen(REDIRECT_PORT, () => {
     console.log(`OAuth callback server listening on port ${REDIRECT_PORT}`)
   })
 
