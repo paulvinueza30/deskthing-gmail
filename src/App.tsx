@@ -29,6 +29,8 @@ export default function App() {
   }, [])
 
   const handleSelectEmail = (email: EmailSummary) => {
+    // Show immediately with snippet as body, then update when full body arrives
+    setEmailDetail({ ...email, body: email.snippet || '' })
     setView('detail')
     store.getEmailDetail(email.id)
   }

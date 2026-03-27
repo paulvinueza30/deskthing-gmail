@@ -18,34 +18,26 @@ export default function EmailDetail({ email, onBack, onMarkRead }: Props) {
 
   return (
     <div className="email-detail">
-      {/* Top bar */}
-      <div className="detail-header">
-        <button className="back-btn" onClick={onBack}>
-          ← Back
-        </button>
-        {email.unread && (
-          <button
-            className="mark-read-btn"
-            onClick={() => onMarkRead(email.id)}
-          >
-            Mark read
-          </button>
-        )}
-      </div>
+      <button className="back-btn" onClick={onBack}>←</button>
 
-      {/* Email metadata */}
-      <div className="detail-meta">
-        <div className="detail-subject">{email.subject}</div>
-        <div className="detail-from-row">
-          <span className="detail-from">{email.from}</span>
-          <span className="detail-date">{email.date}</span>
+      <div className="detail-content">
+        <div className="detail-meta">
+          <div className="detail-meta-top">
+            <div className="detail-subject">{email.subject}</div>
+            {email.unread && (
+              <button className="mark-read-btn" onClick={() => onMarkRead(email.id)}>
+                Mark read
+              </button>
+            )}
+          </div>
+          <div className="detail-from-row">
+            <span className="detail-from">{email.from}</span>
+            <span className="detail-date">{email.date}</span>
+          </div>
         </div>
-      </div>
 
-      {/* Body */}
-      <div className="detail-body-scroll">
-        <div className="detail-body">
-          {email.body}
+        <div className="detail-body-scroll">
+          <div className="detail-body">{email.body}</div>
         </div>
       </div>
     </div>

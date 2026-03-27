@@ -97,8 +97,6 @@ class GmailStore {
   }
 
   getEmailDetail(id: string) {
-    this._emailDetail = null
-    this.detailListeners.forEach((fn) => fn(null))
     this.deskThing.send({ type: 'get', request: 'email_detail', payload: { id } } as any)
   }
 
