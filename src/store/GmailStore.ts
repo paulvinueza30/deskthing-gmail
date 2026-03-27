@@ -27,7 +27,7 @@ type Listener<T> = (data: T) => void
 
 class GmailStore {
   private static instance: GmailStore
-  private deskThing = DeskThing.getInstance()
+  private deskThing = DeskThing
 
   private _emails: EmailSummary[] = []
   private _emailDetail: EmailDetail | null = null
