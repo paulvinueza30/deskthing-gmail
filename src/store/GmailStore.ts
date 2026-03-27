@@ -50,8 +50,10 @@ class GmailStore {
       this._emails = data.payload?.emails ?? []
       this._unreadCount = data.payload?.unreadCount ?? 0
       this._loading = false
+      this._status = { status: 'authorized', message: 'Gmail connected!' }
       this.emailListeners.forEach((fn) => fn(this._emails))
       this.unreadListeners.forEach((fn) => fn(this._unreadCount))
+      this.statusListeners.forEach((fn) => fn(this._status))
     })
 
     this.deskThing.on('gmail_email_detail', (data: any) => {
