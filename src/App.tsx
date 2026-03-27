@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import GmailStore, { EmailSummary, EmailDetail, GmailStatus } from './store/GmailStore'
+import GmailStore, { EmailSummary, EmailDetail, GmailStatus, GmailLabel, EmailFilter } from './store/GmailStore'
 import InboxList from './components/InboxList'
 import EmailDetailView from './components/EmailDetail'
 import AuthScreen from './components/AuthScreen'
@@ -15,6 +15,8 @@ export default function App() {
   const [status, setStatus] = useState<GmailStatus>(store.status)
   const [loading, setLoading] = useState(false)
   const [view, setView] = useState<View>('inbox')
+  const [labels, setLabels] = useState<GmailLabel[]>(store.labels)
+  const [currentFilter, setCurrentFilter] = useState<EmailFilter>(store.currentFilter)
 
   useEffect(() => {
     const unsubs = [
@@ -22,10 +24,19 @@ export default function App() {
       store.onEmailDetail((data) => setEmailDetail(data)),
       store.onStatus((data) => setStatus(data)),
       store.onUnreadCount((count) => setUnreadCount(count)),
+      store.onLabels((data) => setLabels(data)),
     ]
     // Request initial state from the server
+    store.getLabels()
     store.refreshEmails()
-    return () => unsubs.forEach((fn) => fn())
+
+    // Auto-refresh every 60 seconds using current filter
+    const interval = setInterval(() => store.refreshEmails(), 60_000)
+
+    return () => {
+      unsubs.forEach((fn) => fn())
+      clearInterval(interval)
+    }
   }, [])
 
   const handleSelectEmail = (email: EmailSummary) => {
@@ -50,6 +61,12 @@ export default function App() {
   const handleRefresh = () => {
     setLoading(true)
     store.refreshEmails()
+  }
+
+  const handleFilterChange = (filter: EmailFilter) => {
+    setCurrentFilter(filter)
+    setLoading(true)
+    store.refreshEmails(filter)
   }
 
   // Show loading screen while waiting for initial server response
@@ -80,8 +97,11 @@ export default function App() {
           emails={emails}
           unreadCount={unreadCount}
           loading={loading}
+          labels={labels}
+          currentFilter={currentFilter}
           onSelect={handleSelectEmail}
           onRefresh={handleRefresh}
+          onFilterChange={handleFilterChange}
         />
       ) : (
         <EmailDetailView

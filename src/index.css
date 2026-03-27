@@ -173,11 +173,11 @@ button {
 .email-item {
   width: 100%;
   text-align: left;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   transition: background 0.1s;
   position: relative;
 }
@@ -235,12 +235,40 @@ button {
 .email-item.unread .email-subject { color: var(--text); }
 .email-item.read .email-subject { color: var(--text-sub); }
 
-.email-snippet {
+/* ── Label tabs ─────────────────────────────────────────────────────────────── */
+.label-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  scrollbar-width: none;
+}
+
+.label-tabs::-webkit-scrollbar { display: none; }
+
+.label-tab {
+  flex-shrink: 0;
+  padding: 5px 13px;
+  border-radius: 14px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-sub);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.label-tab:hover { color: var(--text); border-color: var(--text-sub); }
+
+.label-tab.active {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+  font-weight: 600;
 }
 
 /* ── Email detail ───────────────────────────────────────────────────────────── */

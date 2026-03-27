@@ -21,6 +21,16 @@ export interface GmailStatus {
   message: string
 }
 
+export interface GmailLabel {
+  id: string
+  name: string
+}
+
+export type EmailFilter =
+  | { type: 'inbox' }
+  | { type: 'unread' }
+  | { type: 'label'; id: string; name: string }
+
 type Listener<T> = (data: T) => void
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -34,11 +44,14 @@ class GmailStore {
   private _unreadCount = 0
   private _status: GmailStatus = { status: 'loading', message: 'Loading...' }
   private _loading = false
+  private _labels: GmailLabel[] = []
+  private _currentFilter: EmailFilter = { type: 'inbox' }
 
   private emailListeners: Listener<EmailSummary[]>[] = []
   private detailListeners: Listener<EmailDetail | null>[] = []
   private statusListeners: Listener<GmailStatus>[] = []
   private unreadListeners: Listener<number>[] = []
+  private labelListeners: Listener<GmailLabel[]>[] = []
 
   static getInstance(): GmailStore {
     if (!GmailStore.instance) GmailStore.instance = new GmailStore()
@@ -77,6 +90,11 @@ class GmailStore {
         this.unreadListeners.forEach((fn) => fn(this._unreadCount))
       }
     })
+
+    this.deskThing.on('gmail_labels', (data: any) => {
+      this._labels = data.payload?.labels ?? []
+      this.labelListeners.forEach((fn) => fn(this._labels))
+    })
   }
 
   // ─── Getters ────────────────────────────────────────────────────────────────
@@ -86,6 +104,8 @@ class GmailStore {
   get unreadCount() { return this._unreadCount }
   get status() { return this._status }
   get loading() { return this._loading }
+  get labels() { return this._labels }
+  get currentFilter() { return this._currentFilter }
 
   // ─── Actions ────────────────────────────────────────────────────────────────
 
@@ -93,9 +113,14 @@ class GmailStore {
     this.deskThing.send({ type: 'action', request: 'auth' } as any)
   }
 
-  refreshEmails() {
+  getLabels() {
+    this.deskThing.send({ type: 'get', request: 'labels' } as any)
+  }
+
+  refreshEmails(filter?: EmailFilter) {
+    if (filter !== undefined) this._currentFilter = filter
     this._loading = true
-    this.deskThing.send({ type: 'get', request: 'emails' } as any)
+    this.deskThing.send({ type: 'get', request: 'emails', payload: { filter: this._currentFilter } } as any)
   }
 
   getEmailDetail(id: string) {
@@ -126,6 +151,11 @@ class GmailStore {
   onUnreadCount(fn: Listener<number>) {
     this.unreadListeners.push(fn)
     return () => { this.unreadListeners = this.unreadListeners.filter((l) => l !== fn) }
+  }
+
+  onLabels(fn: Listener<GmailLabel[]>) {
+    this.labelListeners.push(fn)
+    return () => { this.labelListeners = this.labelListeners.filter((l) => l !== fn) }
   }
 }
 

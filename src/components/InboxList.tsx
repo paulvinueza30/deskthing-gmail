@@ -1,20 +1,38 @@
-import { EmailSummary } from '../store/GmailStore'
+import { EmailSummary, GmailLabel, EmailFilter } from '../store/GmailStore'
 
 interface Props {
   emails: EmailSummary[]
   unreadCount: number
   loading: boolean
+  labels: GmailLabel[]
+  currentFilter: EmailFilter
   onSelect: (email: EmailSummary) => void
   onRefresh: () => void
+  onFilterChange: (filter: EmailFilter) => void
 }
 
-export default function InboxList({ emails, unreadCount, loading, onSelect, onRefresh }: Props) {
+function filterLabel(filter: EmailFilter): string {
+  if (filter.type === 'unread') return 'Unread'
+  if (filter.type === 'label') return filter.name
+  return 'Inbox'
+}
+
+function isFilterActive(filter: EmailFilter, tab: EmailFilter): boolean {
+  if (tab.type !== filter.type) return false
+  if (tab.type === 'label' && filter.type === 'label') return tab.id === filter.id
+  return true
+}
+
+export default function InboxList({
+  emails, unreadCount, loading, labels, currentFilter,
+  onSelect, onRefresh, onFilterChange,
+}: Props) {
   return (
     <div className="inbox-list">
       {/* Header */}
       <div className="inbox-header">
         <div className="inbox-title-row">
-          <span className="inbox-title">Inbox</span>
+          <span className="inbox-title">{filterLabel(currentFilter)}</span>
           {unreadCount > 0 && (
             <span className="unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
           )}
@@ -27,6 +45,31 @@ export default function InboxList({ emails, unreadCount, loading, onSelect, onRe
         >
           ↻
         </button>
+      </div>
+
+      {/* Label tabs */}
+      <div className="label-tabs">
+        <button
+          className={`label-tab ${isFilterActive(currentFilter, { type: 'inbox' }) ? 'active' : ''}`}
+          onClick={() => onFilterChange({ type: 'inbox' })}
+        >
+          Inbox
+        </button>
+        <button
+          className={`label-tab ${isFilterActive(currentFilter, { type: 'unread' }) ? 'active' : ''}`}
+          onClick={() => onFilterChange({ type: 'unread' })}
+        >
+          Unread
+        </button>
+        {labels.map((label) => (
+          <button
+            key={label.id}
+            className={`label-tab ${isFilterActive(currentFilter, { type: 'label', id: label.id, name: label.name }) ? 'active' : ''}`}
+            onClick={() => onFilterChange({ type: 'label', id: label.id, name: label.name })}
+          >
+            {label.name}
+          </button>
+        ))}
       </div>
 
       {/* Email list */}
@@ -53,7 +96,6 @@ export default function InboxList({ emails, unreadCount, loading, onSelect, onRe
                 <span className="email-date">{email.date}</span>
               </div>
               <div className="email-subject">{email.subject}</div>
-              <div className="email-snippet">{email.snippet}</div>
             </button>
           ))
         )}

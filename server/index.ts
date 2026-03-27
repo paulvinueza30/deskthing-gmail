@@ -25,6 +25,16 @@ interface EmailDetail extends EmailSummary {
   body: string
 }
 
+interface GmailLabel {
+  id: string
+  name: string
+}
+
+type EmailFilter =
+  | { type: 'inbox' }
+  | { type: 'unread' }
+  | { type: 'label'; id: string; name: string }
+
 // ─── OAuth helpers ────────────────────────────────────────────────────────────
 
 const REDIRECT_PORT = 8889
@@ -200,7 +210,24 @@ function getHeader(headers: { name: string; value: string }[], name: string): st
   return headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? ''
 }
 
-async function fetchAndSendEmails(maxResults = 20) {
+async function fetchAndSendLabels() {
+  const authClient = await getAuthenticatedClient()
+  if (!authClient) return
+
+  try {
+    const gmail = google.gmail({ version: 'v1', auth: authClient })
+    const res = await gmail.users.labels.list({ userId: 'me' })
+    const labels: GmailLabel[] = (res.data.labels ?? [])
+      .filter((l) => l.type === 'user')
+      .map((l) => ({ id: l.id!, name: l.name! }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    DeskThing.send({ type: 'gmail_labels', payload: { labels } })
+  } catch (err: any) {
+    console.log(`Error fetching labels: ${err?.message}`)
+  }
+}
+
+async function fetchAndSendEmails(filter: EmailFilter = { type: 'inbox' }, maxResults = 10) {
   const authClient = await getAuthenticatedClient()
   if (!authClient) {
     DeskThing.send({
@@ -221,12 +248,18 @@ async function fetchAndSendEmails(maxResults = 20) {
     })
     const unreadCount = unreadRes.data.resultSizeEstimate ?? 0
 
-    // Get inbox messages
-    const listRes = await gmail.users.messages.list({
-      userId: 'me',
-      labelIds: ['INBOX'],
-      maxResults,
-    })
+    // Build list params based on filter
+    const listParams: any = { userId: 'me', maxResults }
+    if (filter.type === 'unread') {
+      listParams.q = 'is:unread in:inbox'
+    } else if (filter.type === 'label') {
+      listParams.labelIds = [filter.id]
+    } else {
+      listParams.labelIds = ['INBOX']
+    }
+
+    // Get messages
+    const listRes = await gmail.users.messages.list(listParams)
 
     const messages = listRes.data.messages ?? []
     if (messages.length === 0) {
@@ -397,10 +430,13 @@ DeskThing.on('get', async (data: any) => {
   const { request, payload } = data
   switch (request) {
     case 'emails':
-      await fetchAndSendEmails()
+      await fetchAndSendEmails(payload?.filter)
       break
     case 'email_detail':
       if (payload?.id) await fetchEmailDetail(payload.id)
+      break
+    case 'labels':
+      await fetchAndSendLabels()
       break
   }
 })
